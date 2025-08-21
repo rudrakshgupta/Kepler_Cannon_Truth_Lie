@@ -1,4 +1,3 @@
-
 import streamlit as st
 import random
 
@@ -63,9 +62,12 @@ with tabs[1]:
     if st.session_state.current_round:
         round_data = st.session_state.current_round
         statements = round_data["statements"]
-        vote = st.radio("Which one do you think is TRUE?", 
-                        options=[f"1: {statements[0][0]}", f"2: {statements[1][0]}"],
-                        key=f"vote_{round_data['player']}")
+        vote = st.radio(
+            "Which one do you think is TRUE?",
+            options=[1, 2],
+            format_func=lambda i: f"{i}: {statements[i-1][0]}",
+            key=f"vote_{round_data['player']}"
+        )
         if st.button("Submit Vote"):
             st.session_state.current_round["votes"].append(vote)
             st.success("Vote submitted!")
@@ -80,14 +82,14 @@ with tabs[2]:
     pin = st.text_input("Enter Admin PIN", type="password")
     if pin == ADMIN_PIN:
         st.success("Admin Access Granted")
-
+        
         if not st.session_state.current_round:
             st.subheader("Start a New Round")
             if st.session_state.players:
                 player = st.selectbox("Choose Player", list(st.session_state.players.keys()))
                 if st.button("Start Round"):
                     start_round(player)
-                    st.experimental_rerun()
+                    st.rerun()
             else:
                 st.info("No players yet.")
         else:
@@ -101,7 +103,7 @@ with tabs[2]:
                 votes = round_data["votes"]
                 total_votes = len(votes)
                 lie_index = next(i for i, (_, kind) in enumerate(round_data["statements"], start=1) if kind == "lie")
-                wrong_votes = sum(1 for v in votes if v.startswith(str(lie_index)))
+                wrong_votes = sum(1 for v in votes if v == lie_index)
 
                 if total_votes > 0 and (wrong_votes / total_votes) > 0.5:
                     score = 2
@@ -114,7 +116,7 @@ with tabs[2]:
                 st.session_state.players[round_data["player"]]["score"] += score
 
                 end_round()
-
+            
             st.subheader("Leaderboard")
             leaderboard = sorted(st.session_state.players.items(), key=lambda x: x[1].get("score",0), reverse=True)
             for name, data in leaderboard:
