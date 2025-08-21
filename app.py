@@ -32,6 +32,11 @@ def end_round():
     st.session_state.rounds.append(round_data)
     st.session_state.current_round = None
 
+def reset_game():
+    st.session_state.players = {}
+    st.session_state.rounds = []
+    st.session_state.current_round = None
+
 # ----------------------
 # UI
 # ----------------------
@@ -49,7 +54,7 @@ with tabs[0]:
     lie = st.text_input("Enter ONE False Statement")
     if st.button("Submit"):
         if name and truth and lie:
-            st.session_state.players[name] = {"truth": truth, "lie": lie}
+            st.session_state.players[name] = {"truth": truth, "lie": lie, "score": 0}
             st.success("Submitted!")
         else:
             st.error("Please fill all fields.")
@@ -112,14 +117,22 @@ with tabs[2]:
                     score = 0
                     st.info(f"{round_data['player']} did not fool the majority. +0 points")
 
-                st.session_state.players[round_data["player"]].setdefault("score", 0)
                 st.session_state.players[round_data["player"]]["score"] += score
-
                 end_round()
-            
-            st.subheader("Leaderboard")
+
+            if st.button("Next Round"):
+                st.session_state.current_round = None
+                st.rerun()
+
+        # Leaderboard & Reset
+        st.subheader("Leaderboard")
+        if st.session_state.players:
             leaderboard = sorted(st.session_state.players.items(), key=lambda x: x[1].get("score",0), reverse=True)
             for name, data in leaderboard:
                 st.write(f"{name}: {data.get('score',0)} pts")
+        if st.button("Reset Game"):
+            reset_game()
+            st.success("Game has been reset!")
+            st.rerun()
     else:
         st.warning("Enter admin PIN to access host controls.")
